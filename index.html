@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        
+        .calculator {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .input-section {
+            margin-bottom: 20px;
+        }
+        
+        #numero {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button:focus {
+            outline: 2px solid #0056b3;
+            outline-offset: 2px;
+        }
+        
+        .csv-operations {
+            grid-column: span 4;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .grande {
+            font-size: 24px;
+            color: #333;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>Calculadora Web</h1>
+        
+        <div class="input-section">
+            <input type="text" id="numero" placeholder="Ingrese un número o lista CSV (ej: 1,2,3)" tabindex="1">
+        </div>
+        
+        <h2 id="info" class="grande" title="Info sobre el número">Info sobre el número</h2>
+        
+        <div class="buttons">
+            <!-- Operaciones Unitarias -->
+            <button id="cuadrado" onclick="cuadrado()" tabindex="2">Cuadrado</button>
+            <button id="modulo" onclick="mod()" tabindex="3">Módulo</button>
+            <button id="factorial" onclick="fact()" tabindex="4">Factorial</button>
+            <button id="raiz" onclick="raiz()" tabindex="5">Raíz Cuadrada</button>
+            
+            <!-- Operaciones Binarias -->
+            <button id="suma" onclick="suma()" tabindex="6">+</button>
+            <button id="multiplicacion" onclick="multiplicacion()" tabindex="7">×</button>
+            <button id="igual" onclick="eq()" tabindex="8">=</button>
+            <button onclick="limpiar()" tabindex="9">C</button>
+            
+            <!-- Operaciones CSV -->
+            <div class="csv-operations">
+                <button id="sumatorio" onclick="sumatorio()" tabindex="10">Sumatorio CSV</button>
+                <button id="ordenar" onclick="ordenar()" tabindex="11">Ordenar CSV</button>
+                <button id="revertir" onclick="revertir()" tabindex="12">Revertir CSV</button>
+                <button id="quitar" onclick="quitar()" tabindex="13">Quitar Último</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales para operaciones binarias
+        let primerNumero = null;
+        let operadorActual = null;
+        
+        // Función de validación
+        const validar = (input) => {
+            if (!input || input.trim() === '') {
+                return { valido: false, mensaje: 'Error: Campo vacío' };
+            }
+            
+            // Verificar si es una lista CSV
+            if (input.includes(',')) {
+                const valores = input.split(',').map(v => v.trim());
+                if (valores.some(v => v === '')) {
+                    return { valido: false, mensaje: 'Error: Lista CSV contiene valores vacíos' };
+                }
+                if (valores.some(v => isNaN(Number(v)))) {
+                    return { valido: false, mensaje: 'Error: Lista CSV contiene valores no numéricos' };
+                }
+                return { valido: true, tipo: 'csv', valores: valores.map(Number) };
+            }
+            
+            // Verificar si es un número
+            const numero = Number(input);
+            if (isNaN(numero)) {
+                return { valido: false, mensaje: 'Error: Entrada no es un número válido' };
+            }
+            
+            return { valido: true, tipo: 'numero', valor: numero };
+        };
+        
+        // Función para actualizar el campo informativo
+        const rellenar_info = (resultado, operacion) => {
+            const infoElement = document.getElementById('info');
+            infoElement.classList.remove('error');
+            
+            if (typeof resultado === 'string' && resultado.startsWith('Error:')) {
+                infoElement.textContent = resultado;
+                infoElement.classList.add('error');
+                return;
+            }
+            
+            let mensaje = '';
+            
+            switch (operacion) {
+                case 'cuadrado':
+                    if (resultado < 100) {
+                        mensaje = 'Info: El resultado es menor que 100';
+                    } else if (resultado >= 100 && resultado <= 200) {
+                        mensaje = 'Info: El resultado está entre 100 y 200';
+                    } else {
+                        mensaje = 'Info: El resultado es superior a 200';
+                    }
+                    break;
+                case 'modulo':
+                    mensaje = `Info: Módulo calculado. Resultado: ${resultado}`;
+                    break;
+                case 'factorial':
+                    mensaje = `Info: Factorial calculado. Resultado: ${resultado}`;
+                    break;
+                case 'raiz':
+                    const input = document.getElementById('numero').value;
+                    const numero = Number(input);
+                    if (numero < 0) {
+                        mensaje = 'Info: Raíz cuadrada de número negativo (resultado complejo)';
+                    } else {
+                        mensaje = 'Info: Raíz cuadrada de número positivo';
+                    }
+                    break;
+                case 'suma':
+                    mensaje = `Operación: Suma. Resultado: ${resultado}`;
+                    break;
+                case 'multiplicacion':
+                    mensaje = `Operación: Multiplicación. Resultado: ${resultado}`;
+                    break;
+                case 'csv':
+                    mensaje = 'Lista de valores procesada';
+                    break;
+                default:
+                    mensaje = `Info: Operación completada. Resultado: ${resultado}`;
+            }
+            
+            infoElement.textContent = mensaje;
+        };
+        
+        // Operaciones Unitarias
+        const cuadrado = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'numero') {
+                rellenar_info('Error: Esta operación requiere un número único', 'error');
+                return;
+            }
+            
+            const resultado = validacion.valor ** 2;
+            document.getElementById('numero').value = resultado;
+            rellenar_info(resultado, 'cuadrado');
+        };
+        
+        const mod = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'numero') {
+                rellenar_info('Error: Esta operación requiere un número único', 'error');
+                return;
+            }
+            
+            const resultado = Math.abs(validacion.valor);
+            document.getElementById('numero').value = resultado;
+            rellenar_info(resultado, 'modulo');
+        };
+        
+        const fact = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'numero') {
+                rellenar_info('Error: Esta operación requiere un número único', 'error');
+                return;
+            }
+            
+            const numero = validacion.valor;
+            if (numero < 0 || !Number.isInteger(numero)) {
+                rellenar_info('Error: El factorial requiere un entero no negativo', 'error');
+                return;
+            }
+            
+            let resultado = 1;
+            for (let i = 2; i <= numero; i++) {
+                resultado *= i;
+            }
+            
+            document.getElementById('numero').value = resultado;
+            rellenar_info(resultado, 'factorial');
+        };
+        
+        const raiz = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'numero') {
+                rellenar_info('Error: Esta operación requiere un número único', 'error');
+                return;
+            }
+            
+            const numero = validacion.valor;
+            if (numero < 0) {
+                document.getElementById('numero').value = 'NaN';
+                rellenar_info('NaN', 'raiz');
+            } else {
+                const resultado = Math.sqrt(numero);
+                document.getElementById('numero').value = resultado;
+                rellenar_info(resultado, 'raiz');
+            }
+        };
+        
+        // Operaciones Binarias
+        const suma = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'numero') {
+                rellenar_info('Error: Esta operación requiere un número único', 'error');
+                return;
+            }
+            
+            primerNumero = validacion.valor;
+            operadorActual = 'suma';
+            document.getElementById('numero').value = '';
+            rellenar_info('Introduce el segundo número y presiona =', 'info');
+        };
+        
+        const multiplicacion = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'numero') {
+                rellenar_info('Error: Esta operación requiere un número único', 'error');
+                return;
+            }
+            
+            primerNumero = validacion.valor;
+            operadorActual = 'multiplicacion';
+            document.getElementById('numero').value = '';
+            rellenar_info('Introduce el segundo número y presiona =', 'info');
+        };
+        
+        const eq = () => {
+            if (primerNumero === null || operadorActual === null) {
+                rellenar_info('Error: No hay operación pendiente', 'error');
+                return;
+            }
+            
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'numero') {
+                rellenar_info('Error: Esta operación requiere un número único', 'error');
+                return;
+            }
+            
+            let resultado;
+            const segundoNumero = validacion.valor;
+            
+            switch (operadorActual) {
+                case 'suma':
+                    resultado = primerNumero + segundoNumero;
+                    break;
+                case 'multiplicacion':
+                    resultado = primerNumero * segundoNumero;
+                    break;
+                default:
+                    rellenar_info('Error: Operador no reconocido', 'error');
+                    return;
+            }
+            
+            document.getElementById('numero').value = resultado;
+            rellenar_info(resultado, operadorActual);
+            
+            // Limpiar variables
+            primerNumero = null;
+            operadorActual = null;
+        };
+        
+        // Operaciones CSV
+        const sumatorio = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'csv') {
+                rellenar_info('Error: Esta operación requiere una lista CSV', 'error');
+                return;
+            }
+            
+            const resultado = validacion.valores.reduce((sum, val) => sum + val, 0);
+            document.getElementById('numero').value = resultado;
+            rellenar_info(resultado, 'csv');
+        };
+        
+        const ordenar = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'csv') {
+                rellenar_info('Error: Esta operación requiere una lista CSV', 'error');
+                return;
+            }
+            
+            const resultado = [...validacion.valores].sort((a, b) => a - b);
+            document.getElementById('numero').value = resultado.join(',');
+            rellenar_info(resultado.join(','), 'csv');
+        };
+        
+        const revertir = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'csv') {
+                rellenar_info('Error: Esta operación requiere una lista CSV', 'error');
+                return;
+            }
+            
+            const resultado = [...validacion.valores].reverse();
+            document.getElementById('numero').value = resultado.join(',');
+            rellenar_info(resultado.join(','), 'csv');
+        };
+        
+        const quitar = () => {
+            const input = document.getElementById('numero').value;
+            const validacion = validar(input);
+            
+            if (!validacion.valido) {
+                rellenar_info(validacion.mensaje, 'error');
+                return;
+            }
+            
+            if (validacion.tipo !== 'csv') {
+                rellenar_info('Error: Esta operación requiere una lista CSV', 'error');
+                return;
+            }
+            
+            if (validacion.valores.length === 0) {
+                rellenar_info('Error: No hay elementos para quitar', 'error');
+                return;
+            }
+            
+            const resultado = validacion.valores.slice(0, -1);
+            if (resultado.length === 0) {
+                document.getElementById('numero').value = '';
+                rellenar_info('Lista vacía después de quitar elemento', 'csv');
+            } else {
+                document.getElementById('numero').value = resultado.join(',');
+                rellenar_info(resultado.join(','), 'csv');
+            }
+        };
+        
+        // Función auxiliar para limpiar
+        const limpiar = () => {
+            document.getElementById('numero').value = '';
+            primerNumero = null;
+            operadorActual = null;
+            document.getElementById('info').textContent = 'Info sobre el número';
+            document.getElementById('info').classList.remove('error');
+        };
+        
+        // Accessibility: Allow keyboard navigation
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'Enter':
+                    if (operadorActual) {
+                        eq();
+                    }
+                    break;
+                case 'Escape':
+                    limpiar();
+                    break;
+                case '+':
+                    if (event.ctrlKey) {
+                        event.preventDefault();
+                        suma();
+                    }
+                    break;
+                case '*':
+                    if (event.ctrlKey) {
+                        event.preventDefault();
+                        multiplicacion();
+                    }
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
