@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Web</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="calculadora">
+        <h1>Calculadora Web</h1>
+        
+        <div class="display">
+            <input type="text" id="display" placeholder="Ingrese un número o lista CSV">
+        </div>
+        
+        <h2 id="info" class="grande" title="Info sobre el número">Info sobre el número</h2>
+        
+        <div class="botones">
+            <!-- Operaciones unitarias -->
+            <div class="seccion">
+                <h3>Operaciones Unitarias</h3>
+                <button id="cuadrado" onclick="cuadrado()">x²</button>
+                <button id="modulo" onclick="mod()">|x|</button>
+                <button id="factorial" onclick="fact()">x!</button>
+            </div>
+            
+            <!-- Operaciones binarias -->
+            <div class="seccion">
+                <h3>Operaciones Binarias</h3>
+                <button id="suma" onclick="suma()">+</button>
+                <button id="multiplicacion" onclick="multiplicacion()">×</button>
+                <button id="igual" onclick="eq()">=</button>
+            </div>
+            
+            <!-- Operaciones CSV -->
+            <div class="seccion">
+                <h3>Operaciones CSV</h3>
+                <button id="sumatorio" onclick="sumatorio()">Σ</button>
+                <button id="ordenar" onclick="ordenar()">Ordenar</button>
+                <button id="revertir" onclick="revertir()">Revertir</button>
+                <button id="quitar" onclick="quitar()">Quitar</button>
+            </div>
+            
+            <!-- Utilidades -->
+            <div class="seccion">
+                <h3>Utilidades</h3>
+                <button id="borrar" onclick="borrar()">C</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
